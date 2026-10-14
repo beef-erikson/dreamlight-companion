@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- ══════════════════════════════════════════════════════════════════
+     DREAMLIGHT COMPANION 🌟
+     A fan-made helper for Disney Dreamlight Valley.
+     Single static file — drop into a GitHub Pages repo, done.
+
+     ▸ All game data lives in the "GAME DATA" section of the <script>
+       below (recipes, villagers, crops, collections, daily duties).
+       Values marked "~" are plausible placeholders — edit freely!
+     ▸ Progress is saved to localStorage under "dreamlightCompanionSave.v1"
+     ▸ Settings ⚙️ → Export/Import Save backs up progress as text
+       (iOS Safari can purge localStorage after long idle periods).
+
+     Not affiliated with Disney or Gameloft. Fan tool, no external APIs.
+     ══════════════════════════════════════════════════════════════════ -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dreamlight">
+<meta name="theme-color" content="#150c2e">
+<title>Dreamlight Companion ✨</title>
+
+<!-- App icon: gold star on deep purple (inline data-URI, no files needed) -->
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Cdefs%3E%3CradialGradient id='g' cx='50%25' cy='38%25' r='75%25'%3E%3Cstop offset='0%25' stop-color='%233a2178'/%3E%3Cstop offset='100%25' stop-color='%23170d33'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect width='180' height='180' rx='42' fill='url(%23g)'/%3E%3Cpath d='M90 26l17.1 40.8 43.4 4.7-32.7 29 9.5 42.5L90 119.6l-37.3 23.9 9.5-42.5-32.7-29 43.4-4.7z' fill='%23ffd76a'/%3E%3Ccircle cx='146' cy='40' r='4' fill='%23fff3cf'/%3E%3Ccircle cx='38' cy='52' r='3' fill='%23fff3cf'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='42' fill='%23170d33'/%3E%3Cpath d='M90 26l17.1 40.8 43.4 4.7-32.7 29 9.5 42.5L90 119.6l-37.3 23.9 9.5-42.5-32.7-29 43.4-4.7z' fill='%23ffd76a'/%3E%3C/svg%3E">
+
+<style>
+/* ═══════════════════════════ THEME ═══════════════════════════
+   Deep Dreamlight night-sky: indigo nebulae, gold starlight. */
+:root{
+  --bg-0:#0f0a24; --bg-1:#1a0f3a; --bg-2:#2a1a5e;
+  --card:rgba(255,255,255,.055);
+  --card-brt:rgba(255,255,255,.10);
+  --line:rgba(255,255,255,.10);
+  --gold:#ffd76a; --gold-2:#f4b942; --gold-soft:rgba(255,215,106,.16);
+  --text:#f4eeff; --muted:#b7a6de; --faint:#8d7cc0;
+  --green:#8ef0b0; --green-soft:rgba(142,240,176,.16);
+  --blue:#9ad4ff; --pink:#ffa8dd;
+  --r-lg:20px; --r-md:14px; --r-sm:10px;
+  --shadow:0 10px 30px rgba(8,3,26,.5);
+  --glow-gold:0 0 14px rgba(255,215,106,.45);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{touch-action:manipulation}
+html,body{height:100%}
+body{
+  font-family:ui-rounded,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+  -webkit-font-smoothing:antialiased;
+  color:var(--text);
+  background:
+    radial-gradient(900px 620px at 85% -12%, rgba(96,54,190,.55), transparent 62%),
+    radial-gradient(760px 560px at -18% 108%, rgba(52,44,138,.6), transparent 60%),
+    linear-gradient(180deg,var(--bg-1) 0%,var(--bg-0) 100%);
+  overflow:hidden;
+  text-size-adjust:100%;
+  -webkit-text-size-adjust:100%;
+}
+/* faint twinkling starfield over the whole valley */
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  width:2px;height:2px;border-radius:50%;background:transparent;
+  box-shadow:
+    60px 90px 0 0 rgba(255,255,255,.5), 180px 40px 0 0 rgba(255,255,255,.32),
+    300px 160px 0 0 rgba(255,255,255,.42), 90px 300px 0 0 rgba(255,255,255,.3),
+    370px 90px 0 0 rgba(255,255,255,.5), 240px 380px 0 0 rgba(255,255,255,.3),
+    30px 480px 0 0 rgba(255,255,255,.4), 400px 520px 0 0 rgba(255,255,255,.34),
+    140px 600px 0 0 rgba(255,255,255,.3), 340px 700px 0 0 rgba(255,255,255,.44),
+    20px 200px 0 0 rgba(255,255,255,.36), 200px 560px 0 0 rgba(255,255,255,.28);
+  animation:starTwinkle 5.5s ease-in-out infinite;
+}
+@keyframes starTwinkle{0%,100%{opacity:.5}50%{opacity:1}}
+
+/* ── App shell: fixed header / scrolling middle / fixed tab bar ── */
+#app{
+  position:relative;z-index:1;
+  display:flex;flex-direction:column;
+  height:100vh;            /* fallback */
+  height:100dvh;           /* iOS Safari collapsing address bar */
+}
+
+/* ── Header ── */
+header{
+  flex:none;position:relative;overflow:hidden;
+  padding:calc(env(safe-area-inset-top) + 12px) 16px 12px;
+  background:linear-gradient(180deg,rgba(31,17,72,.96),rgba(23,13,52,.88));
+  border-bottom:1px solid var(--line);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.brand{display:flex;align-items:center;gap:9px;min-width:0}
+.brand .logo{font-size:26px;filter:drop-shadow(0 0 8px rgba(255,215,106,.7));animation:bob 3.2s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-2px) rotate(-8deg)}}
+.brand h1{
+  font-size:20px;font-weight:800;letter-spacing:.3px;white-space:nowrap;
+  background:linear-gradient(92deg,#fff6d8,var(--gold) 55%,var(--gold-2));
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  text-shadow:0 0 22px rgba(255,215,106,.25);
+}
+.brand h1 small{display:block;font-size:10.5px;font-weight:600;letter-spacing:2.2px;color:var(--muted);-webkit-text-fill-color:var(--muted);text-transform:uppercase}
+#settingsBtn{
+  flex:none;width:44px;height:44px;border-radius:50%;font-size:20px;
+  border:1px solid var(--card-brt);background:var(--card);color:var(--text);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  transition:transform .12s ease,border-color .12s ease;
+}
+#settingsBtn:active{transform:scale(.9);border-color:var(--gold)}
+/* twinkling sparkles floating in the header */
+.spark{position:absolute;font-size:11px;opacity:.25;pointer-events:none;animation:twk ease-in-out infinite}
+.spark.s1{top:calc(env(safe-area-inset-top) + 14px);right:64px;animation-duration:2.4s}
+.spark.s2{top:calc(env(safe-area-inset-top) + 38px);right:132px;font-size:8px;animation-duration:3.4s;animation-delay:.7s}
+.spark.s3{top:calc(env(safe-area-inset-top) + 8px);right:180px;font-size:9px;animation-duration:2.9s;animation-delay:1.3s}
+.spark.s4{top:calc(env(safe-area-inset-top) + 44px);right:36px;font-size:7px;animation-duration:3.9s;animation-delay:.4s}
+@keyframes twk{0%,100%{opacity:.12;transform:scale(.6) rotate(0deg)}50%{opacity:1;transform:scale(1.15) rotate(25deg)}}
+
+.search-row{
+  margin-top:11px;display:flex;align-items:center;gap:8px;
+  background:rgba(10,5,26,.65);border:1px solid var(--line);border-radius:999px;
+  padding:0 6px 0 14px;height:46px;
+  box-shadow:inset 0 2px 8px rgba(0,0,0,.35);
+}
+.search-row:focus-within{border-color:var(--gold);box-shadow:inset 0 2px 8px rgba(0,0,0,.35),var(--glow-gold)}
+.search-row .s-ico{font-size:16px;opacity:.8}
+#globalSearch{
+  flex:1;min-width:0;height:100%;border:none;outline:none;background:transparent;
+  color:var(--text);font-size:16px;font-family:inherit;               /* ≥16px: no iOS focus zoom */
+}
+#globalSearch::placeholder{color:var(--faint)}
+#searchClear{
+  flex:none;width:38px;height:38px;border:none;background:transparent;color:var(--faint);
+  font-size:15px;border-radius:50%;cursor:pointer;display:none;align-items:center;justify-content:center;
+}
+#searchClear.show{display:flex}
+#searchClear:active{color:var(--gold)}
+
+/* ── Add-to-Home-Screen banner (dismissible, once) ── */
+#banner{
+  flex:none;display:flex;align-items:center;gap:10px;
+  margin:10px 14px 0;padding:11px 14px;
+  background:linear-gradient(92deg,var(--gold-soft),rgba(244,185,66,.08));
+  border:1px solid rgba(255,215,106,.35);border-radius:var(--r-md);
+  font-size:13.5px;line-height:1.45;color:#ffe9ad;
+  animation:fadeUp .4s ease both;
+}
+#banner.hidden{display:none}
+#banner b{color:var(--gold)}
+#banner button{
+  flex:none;width:34px;height:34px;margin-left:auto;border-radius:50%;
+  border:1px solid rgba(255,215,106,.3);background:transparent;color:#ffe9ad;
+  font-size:14px;cursor:pointer;
+}
+#banner button:active{background:rgba(255,215,106,.15)}
+
+/* ── Scrollable content between header & tab bar ── */
+main{
+  flex:1;overflow-y:auto;overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  padding:14px 14px calc(env(safe-area-inset-bottom) + 24px);
+}
+main .inner{max-width:720px;margin:0 auto}
+.tab{display:none}
+.tab.active{display:block;animation:fadeUp .28s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+/* section titles with a little gold flourish */
+.sec-title{font-size:17px;font-weight:800;letter-spacing:.4px;margin:6px 2px 12px;display:flex;align-items:center;gap:8px}
+.sec-title::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(255,215,106,.45),transparent)}
+
+/* ── Cards ── */
+.card{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);
+  box-shadow:var(--shadow);padding:14px;
+}
+
+/* ── Buttons ── */
+.btn{
+  min-height:44px;padding:10px 18px;border-radius:999px;cursor:pointer;
+  font-family:inherit;font-size:15px;font-weight:700;color:var(--text);
+  background:var(--card);border:1px solid var(--card-brt);
+  transition:transform .12s ease,filter .12s ease;
+}
+.btn:active{transform:scale(.96);filter:brightness(1.25)}
+.btn-gold{
+  background:linear-gradient(180deg,#ffe49a,var(--gold) 45%,var(--gold-2));
+  color:#3d2604;border:none;box-shadow:var(--glow-gold);
+}
+.btn-ghost{background:transparent;border:1px solid var(--line);color:var(--muted)}
+.btn-danger{background:rgba(255,110,110,.12);border:1px solid rgba(255,110,110,.4);color:#ff9f9f}
+
+/* ── Progress bars ── */
+.bar{height:10px;border-radius:999px;background:rgba(10,5,26,.7);overflow:hidden;box-shadow:inset 0 1px 4px rgba(0,0,0,.5)}
+.bar i{
+  display:block;height:100%;border-radius:999px;width:0;
+  background:linear-gradient(90deg,var(--gold-2),var(--gold));
+  box-shadow:0 0 10px rgba(255,215,106,.6);
+  transition:width .5s cubic-bezier(.22,1,.36,1);
+}
+.bar-label{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);margin:7px 2px 0}
+
+/* ═══════════════ DAILY TAB ═══════════════ */
+.greet-card{
+  background:linear-gradient(135deg,rgba(96,54,190,.35),rgba(255,215,106,.10));
+  border:1px solid rgba(255,215,106,.22);
+}
+#greeting{font-size:17px;font-weight:800}
+.reset-line{margin-top:6px;font-size:13px;color:var(--muted)}
+.reset-line b{color:var(--gold);font-variant-numeric:tabular-nums}
+.duty{
+  width:100%;display:flex;align-items:center;gap:12px;text-align:left;
+  margin-bottom:9px;cursor:pointer;font-family:inherit;color:var(--text);
+  background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);
+  padding:11px 12px;min-height:58px;
+  transition:transform .12s ease,border-color .15s ease,background .15s ease;
+}
+.duty:active{transform:scale(.98)}
+.duty .d-emoji{
+  flex:none;width:42px;height:42px;border-radius:13px;font-size:21px;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(10,5,26,.5);border:1px solid var(--line);
+}
+.duty .d-txt{flex:1;min-width:0}
+.duty .d-txt b{display:block;font-size:15px;font-weight:700}
+.duty .d-txt small{display:block;font-size:11.5px;color:var(--faint);margin-top:2px}
+.duty .d-check{
+  flex:none;width:30px;height:30px;border-radius:50%;font-size:15px;font-weight:900;
+  border:2px solid var(--line);color:transparent;display:flex;align-items:center;justify-content:center;
+  transition:all .18s ease;
+}
+.duty.done{background:var(--green-soft);border-color:rgba(142,240,176,.4)}
+.duty.done .d-txt b{color:var(--green)}
+.duty.done .d-check{background:var(--green);border-color:var(--green);color:#0b2211;box-shadow:0 0 10px rgba(142,240,176,.5)}
+
+/* ═══════════════ RECIPES TAB ═══════════════ */
+.controls{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.controls input[type="text"],.controls input[type="search"]{
+  flex:1 1 150px;min-height:44px;padding:0 14px;border-radius:999px;font-family:inherit;
+  font-size:16px;color:var(--text);background:rgba(10,5,26,.6);
+  border:1px solid var(--line);outline:none;
+}
+.controls input:focus{border-color:var(--gold)}
+.controls select{
+  min-height:44px;padding:0 12px;border-radius:999px;font-family:inherit;
+  font-size:16px;color:var(--text);background:rgba(10,5,26,.6);
+  border:1px solid var(--line);outline:none;-webkit-appearance:none;appearance:none;
+  padding-right:26px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23b7a6de' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;
+}
+.controls select:focus{border-color:var(--gold)}
+.toggle{
+  min-height:44px;padding:0 15px;border-radius:999px;font-family:inherit;font-size:15px;
+  font-weight:700;cursor:pointer;color:var(--muted);
+  background:rgba(10,5,26,.6);border:1px solid var(--line);
+  transition:all .15s ease;
+}
+.toggle:active{transform:scale(.96)}
+.toggle[aria-pressed="true"]{
+  color:#0b2211;background:linear-gradient(180deg,#b6f5cd,var(--green));
+  border-color:transparent;box-shadow:0 0 12px rgba(142,240,176,.4);
+}
+.count-line{font-size:12.5px;color:var(--faint);margin:2px 2px 10px}
+
+.recipe{
+  margin-bottom:10px;padding:12px 13px;
+  transition:transform .12s ease;
+}
+.recipe:active{transform:scale(.985)}
+.recipe.can-make{border-color:rgba(142,240,176,.45);box-shadow:var(--shadow),0 0 16px rgba(142,240,176,.12)}
+.r-top{display:flex;align-items:center;gap:11px}
+.r-emoji{flex:none;width:40px;height:40px;font-size:22px;display:flex;align-items:center;justify-content:center;background:rgba(10,5,26,.5);border-radius:12px;border:1px solid var(--line)}
+.r-titles{flex:1;min-width:0}
+.r-name{font-size:15px;font-weight:800;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.r-course{font-size:11px;color:var(--faint);letter-spacing:1.1px;text-transform:uppercase;margin-top:2px}
+.r-stars{flex:none;font-size:13px;letter-spacing:1.5px;color:var(--gold);text-shadow:0 0 8px rgba(255,215,106,.5)}
+.r-stars .off{color:rgba(255,255,255,.16);text-shadow:none}
+.badge-can{
+  font-size:10.5px;font-weight:800;letter-spacing:.4px;padding:3px 8px;border-radius:999px;
+  background:linear-gradient(180deg,#b6f5cd,var(--green));color:#0b2211;
+  box-shadow:0 0 10px rgba(142,240,176,.45);white-space:nowrap;
+}
+.r-ing{margin:9px 2px 0;display:flex;flex-wrap:wrap;gap:6px}
+.ing{
+  font-size:12px;padding:4px 9px;border-radius:999px;
+  background:rgba(10,5,26,.5);border:1px solid var(--line);color:var(--muted);
+}
+.ing.own{color:var(--green);border-color:rgba(142,240,176,.4);background:var(--green-soft)}
+.r-stats{display:flex;align-items:center;gap:12px;margin-top:10px;font-size:13px;font-weight:700;color:var(--muted)}
+.r-stats .zap{color:#ffd76a}
+.r-stats .coin{color:var(--gold)}
+.r-stats .chip{margin-left:auto}
+
+/* ingredient inventory */
+.inv-card{margin-bottom:12px}
+.inv-head{
+  width:100%;display:flex;align-items:center;gap:9px;text-align:left;cursor:pointer;
+  background:transparent;border:none;color:var(--text);font-family:inherit;
+  font-size:15px;font-weight:800;min-height:44px;padding:0;
+}
+.inv-head .caret{margin-left:auto;color:var(--faint);transition:transform .2s ease;font-size:12px}
+.inv-card.open .inv-head .caret{transform:rotate(180deg)}
+.inv-card .inv-body{display:none;margin-top:6px}
+.inv-card.open .inv-body{display:block;animation:fadeUp .25s ease both}
+.inv-group{margin-top:10px}
+.inv-group h4{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:var(--faint);margin:0 2px 7px}
+.inv-grid{display:flex;flex-wrap:wrap;gap:7px}
+.inv-chip{
+  min-height:44px;padding:0 13px;border-radius:999px;cursor:pointer;font-family:inherit;
+  font-size:13.5px;font-weight:700;color:var(--muted);
+  background:rgba(10,5,26,.55);border:1px solid var(--line);
+  display:inline-flex;align-items:center;gap:6px;
+  transition:all .14s ease;
+}
+.inv-chip:active{transform:scale(.93)}
+.inv-chip.own{
+  color:#3d2604;background:linear-gradient(180deg,#ffe49a,var(--gold));
+  border-color:transparent;box-shadow:0 0 10px rgba(255,215,106,.35);
+}
+
+/* ═══════════════ VILLAGERS TAB ═══════════════ */
+.v-progress{margin-bottom:12px}
+.v-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+.villager{padding:14px 12px;text-align:center;position:relative;transition:transform .12s ease}
+.villager:active{transform:scale(.97)}
+.villager.done{border-color:rgba(142,240,176,.4)}
+.v-avatar{
+  width:62px;height:62px;margin:0 auto 8px;border-radius:50%;font-size:32px;
+  display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(circle at 32% 28%,var(--v1,#4b2f9e),var(--v0,#241448));
+  border:2px solid rgba(255,255,255,.14);
+  box-shadow:0 6px 16px rgba(8,3,26,.55),inset 0 0 14px rgba(255,255,255,.08);
+}
+.v-name{font-size:15.5px;font-weight:800}
+.v-role{font-size:12px;color:var(--muted);margin-top:3px}
+.v-gifts{display:flex;flex-direction:column;gap:4px;margin:10px 0 11px}
+.v-gift{
+  font-size:11.5px;color:var(--muted);background:rgba(10,5,26,.45);
+  border:1px solid var(--line);border-radius:999px;padding:5px 8px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.gift-btn{
+  width:100%;min-height:44px;border-radius:999px;cursor:pointer;font-family:inherit;
+  font-size:13px;font-weight:800;color:var(--muted);
+  background:rgba(10,5,26,.55);border:1px solid var(--line);
+  transition:all .15s ease;
+}
+.gift-btn:active{transform:scale(.95)}
+.villager.done .gift-btn{
+  color:#0b2211;background:linear-gradient(180deg,#b6f5cd,var(--green));
+  border-color:transparent;box-shadow:0 0 10px rgba(142,240,176,.4);
+}
+
+/* ═══════════════ CROPS TAB ═══════════════ */
+.table-wrap{overflow-x:auto;padding:6px 6px 2px;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;min-width:520px}
+th,td{padding:11px 10px;text-align:right;font-size:13px;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{
+  font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gold);
+  cursor:pointer;user-select:none;-webkit-user-select:none;border-bottom:1px solid var(--line);
+  min-width:44px;padding-top:16px;padding-bottom:16px;   /* sortable → keep ≥44px tap target */
+}
+th .arrow{font-size:9px;margin-left:3px;color:var(--gold)}
+td{border-bottom:1px solid rgba(255,255,255,.05);color:var(--text)}
+td.crop-name{font-weight:700}
+td.crop-name .ce{margin-right:6px;font-size:15px}
+td .pos{color:var(--green);font-weight:800}
+td .hrv{color:var(--gold);font-weight:800}
+tr:active td{background:rgba(255,255,255,.04)}
+.hint{font-size:11.5px;color:var(--faint);line-height:1.6;margin:10px 4px 0}
+
+/* ═══════════════ COLLECTIONS TAB ═══════════════ */
+.cat-row{display:flex;gap:7px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;-webkit-overflow-scrolling:touch}
+.cat-chip{
+  flex:none;min-height:44px;padding:0 15px;border-radius:999px;cursor:pointer;font-family:inherit;
+  font-size:13.5px;font-weight:700;color:var(--muted);
+  background:var(--card);border:1px solid var(--line);
+  transition:all .15s ease;
+}
+.cat-chip:active{transform:scale(.94)}
+.cat-chip.active{
+  color:#3d2604;background:linear-gradient(180deg,#ffe49a,var(--gold));
+  border-color:transparent;box-shadow:var(--glow-gold);
+}
+.overall-card{margin-bottom:12px}
+.coll-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.coll-item{
+  min-height:48px;border-radius:var(--r-md);cursor:pointer;font-family:inherit;text-align:left;
+  display:flex;align-items:center;gap:9px;padding:8px 11px;
+  background:var(--card);border:1px solid var(--line);color:var(--text);
+  font-size:13px;font-weight:700;position:relative;
+  transition:transform .12s ease,border-color .15s ease;
+}
+.coll-item:active{transform:scale(.96)}
+.coll-item .c-emoji{flex:none;font-size:19px;filter:drop-shadow(0 0 6px var(--hue));}
+.coll-item .c-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.coll-item .c-check{
+  flex:none;width:22px;height:22px;border-radius:50%;font-size:12px;font-weight:900;
+  border:2px solid var(--line);color:transparent;display:flex;align-items:center;justify-content:center;
+  transition:all .15s ease;
+}
+.coll-item.done{border-color:var(--hue);background:rgba(255,255,255,.07)}
+.coll-item.done .c-check{
+  background:var(--hue);border-color:var(--hue);color:#241448;
+  box-shadow:0 0 8px var(--hue);
+}
+
+.empty{
+  padding:34px 16px;text-align:center;color:var(--faint);font-size:14px;line-height:1.7;
+  border:1px dashed var(--line);border-radius:var(--r-lg);
+}
+
+/* flash highlight when jumping from global search */
+.flash{animation:flashGold 2s ease both}
+@keyframes flashGold{
+  0%,60%{box-shadow:0 0 0 2px var(--gold),0 0 24px rgba(255,215,106,.55)}
+  100%{box-shadow:var(--shadow)}
+}
+
+/* ═══════════════ TAB BAR (bottom nav) ═══════════════ */
+nav.tabbar{
+  flex:none;display:flex;gap:2px;
+  padding:6px 8px calc(env(safe-area-inset-bottom) + 6px);
+  background:linear-gradient(180deg,rgba(26,15,58,.97),rgba(16,9,36,.99));
+  border-top:1px solid var(--line);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+}
+.tabbar button{
+  flex:1;min-height:52px;border:none;background:transparent;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  font-family:inherit;color:var(--faint);border-radius:var(--r-md);
+  font-size:10.5px;font-weight:700;letter-spacing:.3px;
+  transition:color .15s ease,transform .12s ease;
+  user-select:none;-webkit-user-select:none;
+}
+.tabbar button .t-ico{font-size:21px;transition:transform .18s ease,filter .18s ease}
+.tabbar button:active{transform:scale(.92)}
+.tabbar button.active{color:var(--gold)}
+.tabbar button.active .t-ico{
+  transform:translateY(-1.5px) scale(1.12);
+  filter:drop-shadow(0 0 9px rgba(255,215,106,.75));
+}
+.tabbar button.active::after{
+  content:"";width:16px;height:3px;border-radius:99px;margin-top:1px;
+  background:linear-gradient(90deg,var(--gold-2),var(--gold));box-shadow:var(--glow-gold);
+}
+
+/* ═══════════════ GLOBAL SEARCH OVERLAY ═══════════════ */
+#searchOverlay{
+  position:fixed;left:0;right:0;z-index:40;display:none;
+  top:var(--hdr-h,110px);bottom:var(--nav-h,70px);
+  background:rgba(15,9,33,.94);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:10px 14px calc(env(safe-area-inset-bottom) + 20px);
+}
+#searchOverlay.open{display:block;animation:fadeUp .2s ease both}
+.sr-group{margin-bottom:16px}
+.sr-title{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:var(--faint);margin:4px 2px 7px}
+.sr-row{
+  width:100%;display:flex;align-items:center;gap:11px;text-align:left;cursor:pointer;
+  background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);
+  padding:11px 13px;min-height:50px;margin-bottom:7px;color:var(--text);font-family:inherit;
+  transition:transform .12s ease;
+}
+.sr-row:active{transform:scale(.98);border-color:var(--gold)}
+.sr-row .sr-ico{flex:none;font-size:20px}
+.sr-row .sr-name{flex:1;min-width:0;font-size:14.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sr-row .sr-meta{flex:none;font-size:11.5px;color:var(--faint);max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ═══════════════ SETTINGS SHEET ═══════════════ */
+#sheetBack{position:fixed;inset:0;z-index:50;background:rgba(8,3,26,.65);opacity:0;pointer-events:none;transition:opacity .25s ease}
+#sheetBack.open{opacity:1;pointer-events:auto}
+#settingsSheet{
+  position:fixed;left:0;right:0;bottom:0;z-index:51;
+  transform:translateY(105%);transition:transform .32s cubic-bezier(.22,1,.36,1);
+  background:linear-gradient(180deg,#241448,#170d33);
+  border-radius:24px 24px 0 0;border:1px solid var(--line);border-bottom:none;
+  padding:10px 18px calc(env(safe-area-inset-bottom) + 22px);
+  max-height:86vh;max-height:86dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  box-shadow:0 -14px 44px rgba(5,2,18,.7);
+}
+#settingsSheet.open{transform:translateY(0)}
+.sheet-grip{width:40px;height:4px;border-radius:99px;background:var(--line);margin:4px auto 14px}
+.sheet h3{font-size:18px;font-weight:800;display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.sheet .note{font-size:12.5px;color:var(--muted);line-height:1.6;margin-bottom:14px}
+.sheet h4{font-size:12px;letter-spacing:1.4px;text-transform:uppercase;color:var(--faint);margin:16px 0 8px}
+.sheet textarea{
+  width:100%;min-height:96px;border-radius:var(--r-md);resize:vertical;
+  background:rgba(10,5,26,.6);border:1px solid var(--line);color:var(--text);
+  font-size:16px;font-family:ui-monospace,Menlo,monospace;line-height:1.5;padding:11px;outline:none;
+}
+.sheet textarea:focus{border-color:var(--gold)}
+.sheet .row{display:flex;gap:9px;margin-top:9px}
+.sheet .row .btn{flex:1}
+.sheet .fine{font-size:11px;color:var(--faint);text-align:center;line-height:1.7;margin-top:18px}
+
+/* ═══════════════ TOAST ═══════════════ */
+#toast{
+  position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 88px);z-index:60;
+  transform:translate(-50%,16px);opacity:0;pointer-events:none;
+  background:linear-gradient(180deg,#ffe49a,var(--gold));color:#3d2604;
+  font-size:13.5px;font-weight:800;padding:11px 18px;border-radius:999px;
+  box-shadow:0 8px 26px rgba(8,3,26,.6),var(--glow-gold);
+  transition:opacity .25s ease,transform .25s ease;max-width:86vw;text-align:center;
+}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* respect users who dislike motion */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none !important;transition:none !important}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ═══ HEADER (safe-area aware) ═══ -->
+  <header id="hdr">
+    <span class="spark s1">✨</span><span class="spark s2">✦</span>
+    <span class="spark s3">✨</span><span class="spark s4">✦</span>
+    <div class="hdr-top">
+      <div class="brand">
+        <span class="logo">🏰</span>
+        <h1>Dreamlight Companion<small>valley guide</small></h1>
+      </div>
+      <button id="settingsBtn" data-act="openSettings" aria-label="Settings">⚙️</button>
+    </div>
+    <div class="search-row">
+      <span class="s-ico">🔍</span>
+      <input id="globalSearch" type="text" placeholder="Search the Valley…" autocomplete="off"
+             aria-label="Search recipes, villagers, crops and collections">
+      <button id="searchClear" data-act="searchClear" aria-label="Clear search">✕</button>
+    </div>
+  </header>
+
+  <!-- ═══ one-time Add to Home Screen tip ═══ -->
+  <div id="banner" role="note">
+    <span>📲</span>
+    <span>Tap <b>Share</b> → <b>Add to Home Screen</b> to use this like an app</span>
+    <button data-act="dismissBanner" aria-label="Dismiss tip">✕</button>
+  </div>
+
+  <!-- ═══ SCROLLING CONTENT ═══ -->
+  <main id="main">
+    <div class="inner">
+
+      <!-- ──────── DAILY ──────── -->
+      <section class="tab active" id="tab-daily" aria-label="Daily checklist">
+        <h2 class="sec-title">✨ Daily Duties</h2>
+        <div class="card greet-card">
+          <div id="greeting">Good morning, Dreamer! ☀️</div>
+          <div class="reset-line">🌙 <b>Daily Reset</b> in <b id="countdown">…</b></div>
+        </div>
+        <div class="card" style="margin:12px 0 14px">
+          <div class="bar"><i id="dailyBar"></i></div>
+          <div class="bar-label"><span id="dailyBarTxt">0 / 8 duties done</span><span id="dailyBarPct">0%</span></div>
+        </div>
+        <div id="dailyList"></div>
+        <button class="btn btn-gold" data-act="resetDay" style="width:100%">🌙 Reset Day</button>
+      </section>
+
+      <!-- ──────── RECIPES ──────── -->
+      <section class="tab" id="tab-recipes" aria-label="Recipe database">
+        <h2 class="sec-title">🍳 Recipes</h2>
+        <div class="controls">
+          <input type="search" id="recipeQ" placeholder="Search recipes…" autocomplete="off">
+          <select id="recipeCourse" aria-label="Filter by course">
+            <option value="">All courses</option>
+            <option value="appetizer">🥗 Appetizers</option>
+            <option value="entree">🍽️ Entrées</option>
+            <option value="dessert">🍰 Desserts</option>
+          </select>
+          <select id="recipeStars" aria-label="Filter by star rating">
+            <option value="">Any stars</option>
+            <option value="1">★</option><option value="2">★★</option>
+            <option value="3">★★★</option><option value="4">★★★★</option>
+            <option value="5">★★★★★</option>
+          </select>
+          <button class="toggle" id="recipeCanMake" data-act="toggleCanMake" aria-pressed="false">✅ Can Make</button>
+        </div>
+        <div class="card inv-card" id="invCard">
+          <button class="inv-head" data-act="toggleInventory" aria-expanded="false">
+            🧺 Ingredient Inventory <span id="invCount" style="font-size:12px;color:var(--faint);font-weight:600"></span>
+            <span class="caret">▼</span>
+          </button>
+          <div class="inv-body" id="invBody"></div>
+        </div>
+        <div class="count-line" id="recipeCount"></div>
+        <div id="recipeList"></div>
+      </section>
+
+      <!-- ──────── VILLAGERS ──────── -->
+      <section class="tab" id="tab-villagers" aria-label="Villager guide">
+        <h2 class="sec-title">🐭 Villagers</h2>
+        <div class="controls">
+          <input type="search" id="villagerQ" placeholder="Search villagers or roles…" autocomplete="off">
+        </div>
+        <div class="card v-progress">
+          <div class="bar"><i id="giftBar"></i></div>
+          <div class="bar-label"><span id="giftBarTxt">🎁 0 / 12 gifted today</span><span id="giftBarPct">0%</span></div>
+        </div>
+        <div style="height:12px"></div>
+        <div class="v-grid" id="villagerGrid"></div>
+      </section>
+
+      <!-- ──────── CROPS ──────── -->
+      <section class="tab" id="tab-crops" aria-label="Crop profit calculator">
+        <h2 class="sec-title">🌾 Crop Profits</h2>
+        <div id="cropFilterTag"></div>
+        <div class="card table-wrap">
+          <table id="cropTable">
+            <thead><tr>
+              <th data-act="sort" data-key="name" scope="col">Crop<span class="arrow"></span></th>
+              <th data-act="sort" data-key="seed" scope="col">🪙 Seed<span class="arrow"></span></th>
+              <th data-act="sort" data-key="growMin" scope="col">⏱ Grow<span class="arrow"></span></th>
+              <th data-act="sort" data-key="yield" scope="col">Yield<span class="arrow"></span></th>
+              <th data-act="sort" data-key="sell" scope="col">🪙 Sell<span class="arrow"></span></th>
+              <th data-act="sort" data-key="profit" scope="col">Profit<span class="arrow"></span></th>
+              <th data-act="sort" data-key="perHour" scope="col">🪙/hr<span class="arrow"></span></th>
+            </tr></thead>
+            <tbody id="cropBody"></tbody>
+          </table>
+        </div>
+        <p class="hint">💡 Profit = (sell × yield) − seed. 🪙/hr assumes you replant the moment a crop matures —
+        pumpkins win for bulk farming, wheat is quick pocket money. Tap any column header to sort.</p>
+      </section>
+
+      <!-- ──────── COLLECTIONS ──────── -->
+      <section class="tab" id="tab-collections" aria-label="Collections tracker">
+        <h2 class="sec-title">📖 Collections</h2>
+        <div class="card overall-card">
+          <div class="bar"><i id="collOverallBar"></i></div>
+          <div class="bar-label"><span>🌟 Valley Collection</span><span id="collOverallPct">0%</span></div>
+        </div>
+        <div class="cat-row" id="catRow">
+          <button class="cat-chip active" data-act="cat" data-cat="meals">🍽️ Meals</button>
+          <button class="cat-chip" data-act="cat" data-cat="fish">🐟 Fish</button>
+          <button class="cat-chip" data-act="cat" data-cat="gems">💎 Gems</button>
+          <button class="cat-chip" data-act="cat" data-cat="flowers">💐 Flowers</button>
+          <button class="cat-chip" data-act="cat" data-cat="foraging">🍃 Foraging</button>
+        </div>
+        <div class="card" style="margin-bottom:12px">
+          <div class="bar"><i id="catBar"></i></div>
+          <div class="bar-label"><span id="catBarTxt"></span><span id="catBarPct">0%</span></div>
+        </div>
+        <div id="cropFilterColl"></div>
+        <div class="coll-grid" id="collGrid"></div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ═══ BOTTOM TAB BAR (safe-area aware) ═══ -->
+  <nav class="tabbar" id="tabbar" aria-label="Main navigation">
+    <button class="active" data-act="tab" data-tab="daily"><span class="t-ico">✨</span>Daily</button>
+    <button data-act="tab" data-tab="recipes"><span class="t-ico">🍳</span>Recipes</button>
+    <button data-act="tab" data-tab="villagers"><span class="t-ico">🐭</span>Villagers</button>
+    <button data-act="tab" data-tab="crops"><span class="t-ico">🌾</span>Crops</button>
+    <button data-act="tab" data-tab="collections"><span class="t-ico">📖</span>Collections</button>
+  </nav>
+</div>
+
+<!-- ═══ GLOBAL SEARCH RESULTS OVERLAY ═══ -->
+<div id="searchOverlay" role="listbox" aria-label="Search results"></div>
+
+<!-- ═══ SETTINGS BOTTOM SHEET ═══ -->
+<div id="sheetBack" data-act="closeSettings"></div>
+<div id="settingsSheet" class="sheet" role="dialog" aria-modal="true" aria-label="Settings">
+  <div class="sheet-grip"></div>
+  <h3>⚙️ Settings &amp; Save Data</h3>
+  <p class="note">Your progress lives only on this device. iPhones can quietly clear website data
+  after long idle stretches — export a backup code once in a while and keep it in Notes. 🌟</p>
+
+  <h4>📤 Export save</h4>
+  <div class="row"><button class="btn btn-gold" data-act="exportSave">📤 Export &amp; Copy Save Code</button></div>
+  <textarea id="exportBox" readonly placeholder="Your save code appears here…" spellcheck="false" style="margin-top:9px"></textarea>
+
+  <h4>📥 Import save</h4>
+  <textarea id="importBox" placeholder="Paste a save code here…" spellcheck="false"></textarea>
+  <div class="row">
+    <button class="btn btn-gold" data-act="importSave">📥 Import Save</button>
+    <button class="btn btn-danger" data-act="resetAll">🗑️ Reset All</button>
+  </div>
+
+  <p class="fine">Dreamlight Companion · fan-made guide · not affiliated with<br>Disney or Gameloft · v1 · made with 💜 and Dreamlight</p>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+/* ══════════════════════════════════════════════════════════════════
+   GAME DATA — edit everything below freely!
+   Recipes: star rating is derived from ingredient count (like the game).
+   Values marked with ~ are plausible placeholders where exact figures
+   weren't certain — tweak to taste.
+   ══════════════════════════════════════════════════════════════════ */
+
+// ── Daily duties (home checklist) ─────────────────────────────────
+const DAILY_TASKS = [
+  { id:'gifts',  emoji:'🎁', label:'Give villager gifts',      hint:'Every villager loves a daily surprise' },
+  { id:'thorns', emoji:'🪄', label:'Clear the Night Thorns',   hint:'Wave the magic — keep the Valley bright' },
+  { id:'mine',   emoji:'⛏️', label:'Mine the rock spots',      hint:'Gems and coal sparkle inside' },
+  { id:'dig',    emoji:'🕳️', label:'Dig the sparkling ground', hint:'Something glimmers under the soil' },
+  { id:'fish',   emoji:'🎣', label:'Fish the ripples',         hint:'Circle ripples hide the best catches' },
+  { id:'shop',   emoji:'💰', label:"Check Scrooge's shop",     hint:'New furniture & clothes every day' },
+  { id:'critters',emoji:'🐿️',label:'Feed the critters',        hint:'Squirrels, bunnies, raccoons & more' },
+  { id:'orbs',   emoji:'✨', label:'Collect memory orbs',      hint:'Pieces of forgotten stories' },
+];
+
+// ── Recipes (course: appetizer | entree | dessert) ────────────────
+// star rating = number of ingredients · energy ⚡ · sell 🪙 (~ = estimate)
+const RECIPES = [
+  // APPETIZERS (10)
+  { name:'Crudites',        emoji:'🥕', course:'appetizer', ingredients:['Carrot'], energy:400, sell:45 },
+  { name:'Cheese Platter',  emoji:'🧀', course:'appetizer', ingredients:['Cheese'], energy:450, sell:80 },
+  { name:'Fruit Salad',     emoji:'🥗', course:'appetizer', ingredients:['Apple','Banana'], energy:800, sell:160 },
+  { name:'Seafood Platter', emoji:'🦐', course:'appetizer', ingredients:['Shrimp','Clam'], energy:850, sell:240 },
+  { name:'Grilled Vegetables', emoji:'🍆', course:'appetizer', ingredients:['Eggplant','Tomato'], energy:750, sell:180 },
+  { name:'Stuffed Mushrooms', emoji:'🍄', course:'appetizer', ingredients:['Mushroom','Cheese'], energy:800, sell:210 },
+  { name:'Tomato Soup',     emoji:'🥣', course:'appetizer', ingredients:['Tomato','Milk'], energy:700, sell:150 },
+  { name:'Coconut Shrimp',  emoji:'🍤', course:'appetizer', ingredients:['Shrimp','Coconut'], energy:800, sell:230 },
+  { name:'Pumpkin Soup',    emoji:'🎃', course:'appetizer', ingredients:['Pumpkin','Milk','Butter'], energy:1100, sell:280 },
+  { name:'Pumpkin Puffs',   emoji:'🥟', course:'appetizer', ingredients:['Pumpkin','Egg','Cheese'], energy:1200, sell:330 },
+  // ENTRÉES (14)
+  { name:'Grilled Fish',    emoji:'🐟', course:'entree', ingredients:['Bass'], energy:500, sell:110 },
+  { name:'Fish Sandwich',   emoji:'🥪', course:'entree', ingredients:['Bass','Wheat'], energy:850, sell:220 },
+  { name:'Fish & Chips',    emoji:'🍟', course:'entree', ingredients:['Cod','Potato'], energy:900, sell:230 },
+  { name:'Buttered Corn',   emoji:'🌽', course:'entree', ingredients:['Corn','Butter'], energy:700, sell:140 },
+  { name:'Veggie Pasta',    emoji:'🍝', course:'entree', ingredients:['Tomato','Mushroom','Wheat'], energy:1100, sell:310 },
+  { name:'Mushroom Pasta',  emoji:'🥘', course:'entree', ingredients:['Mushroom','Milk','Wheat'], energy:1050, sell:290 },
+  { name:'Seafood Pasta',   emoji:'🍲', course:'entree', ingredients:['Shrimp','Wheat','Milk'], energy:1250, sell:350 },
+  { name:'Veggie Stew',     emoji:'🍜', course:'entree', ingredients:['Carrot','Potato','Onion'], energy:1150, sell:300 },
+  { name:'Pizza',           emoji:'🍕', course:'entree', ingredients:['Tomato','Wheat','Cheese'], energy:1200, sell:340 },
+  { name:'Bayou Gumbo',     emoji:'🥣', course:'entree', ingredients:['Okra','Chili Pepper','Rice'], energy:1150, sell:320 },
+  { name:'Spicy Chili',     emoji:'🌶️', course:'entree', ingredients:['Chili Pepper','Tomato','Rice'], energy:1100, sell:300 },
+  { name:'Eggplant Parmesan', emoji:'🧆', course:'entree', ingredients:['Eggplant','Tomato','Cheese'], energy:1250, sell:360 },
+  { name:'Mashed Potatoes', emoji:'🥔', course:'entree', ingredients:['Potato','Milk','Butter'], energy:1050, sell:280 },
+  { name:'Fried Rice',      emoji:'🍚', course:'entree', ingredients:['Rice','Egg','Onion'], energy:1100, sell:290 },
+  // DESSERTS (16)
+  { name:'Meringue',        emoji:'🍥', course:'dessert', ingredients:['Egg','Sugarcane'], energy:700, sell:150 },
+  { name:'Ice Cream',       emoji:'🍦', course:'dessert', ingredients:['Milk','Sugarcane'], energy:750, sell:160 },
+  { name:'Apple Pie',       emoji:'🥧', course:'dessert', ingredients:['Apple','Wheat','Butter'], energy:1100, sell:300 },
+  { name:"Snow White's Gooseberry Pie", emoji:'🥧', course:'dessert', ingredients:['Gooseberry','Wheat','Butter'], energy:1200, sell:330 },
+  { name:'Blueberry Pie',   emoji:'🥧', course:'dessert', ingredients:['Blueberry','Wheat','Butter'], energy:1100, sell:300 },
+  { name:'Cherry Pie',      emoji:'🥧', course:'dessert', ingredients:['Cherry','Wheat','Butter'], energy:1150, sell:310 },
+  { name:'Pancakes',        emoji:'🥞', course:'dessert', ingredients:['Wheat','Egg','Milk'], energy:1050, sell:280 },
+  { name:'Rice Pudding',    emoji:'🍮', course:'dessert', ingredients:['Rice','Milk','Sugarcane'], energy:1000, sell:260 },
+  { name:'Berry Tart',      emoji:'🍰', course:'dessert', ingredients:['Blueberry','Raspberry','Wheat','Butter'], energy:1600, sell:480 },
+  { name:'Waffles',         emoji:'🧇', course:'dessert', ingredients:['Wheat','Egg','Milk','Butter'], energy:1550, sell:460 },
+  { name:'Fruitcake',       emoji:'📚', course:'dessert', ingredients:['Cherry','Blueberry','Wheat','Butter','Egg'], energy:2100, sell:640 },
+  { name:'Coconut Cake',    emoji:'🍰', course:'dessert', ingredients:['Coconut','Wheat','Egg','Milk'], energy:1500, sell:440 },
+  { name:'Pumpkin Pie',     emoji:'🥧', course:'dessert', ingredients:['Pumpkin','Wheat','Butter','Egg'], energy:1650, sell:500 },
+  { name:'Raspberry Cheesecake', emoji:'🍰', course:'dessert', ingredients:['Raspberry','Cheese','Wheat','Egg'], energy:1700, sell:520 },
+  { name:'Soufflé',         emoji:'🍮', course:'dessert', ingredients:['Egg','Milk','Butter','Cheese','Sugarcane'], energy:2300, sell:900 },
+  { name:'Birthday Cake',   emoji:'🎂', course:'dessert', ingredients:['Wheat','Sugarcane','Egg','Butter','Milk'], energy:2400, sell:800 },
+];
+
+// ── Ingredient inventory groups (checked = you own it) ────────────
+const INGREDIENT_GROUPS = [
+  { name:'Vegetables', items:['Carrot','Tomato','Corn','Eggplant','Potato','Onion','Okra','Chili Pepper','Pumpkin'] },
+  { name:'Fruits',     items:['Apple','Banana','Blueberry','Raspberry','Gooseberry','Cherry','Coconut'] },
+  { name:'Dairy & Eggs', items:['Egg','Milk','Butter','Cheese'] },
+  { name:'Fish & Seafood', items:['Bass','Cod','Shrimp','Clam'] },
+  { name:'Pantry',     items:['Wheat','Rice','Sugarcane','Mushroom'] },
+];
+const ING_EMOJI = {
+  Carrot:'🥕',Tomato:'🍅',Corn:'🌽',Eggplant:'🍆',Potato:'🥔',Onion:'🧅',Okra:'🫛','Chili Pepper':'🌶️',Pumpkin:'🎃',
+  Apple:'🍎',Banana:'🍌',Blueberry:'🫐',Raspberry:'🍓',Gooseberry:'🍇',Cherry:'🍒',Coconut:'🥥',
+  Egg:'🥚',Milk:'🥛',Butter:'🧈',Cheese:'🧀',
+  Bass:'🐟',Cod:'🐟',Shrimp:'🍤',Clam:'🐚',
+  Wheat:'🌾',Rice:'🍚',Sugarcane:'🎋',Mushroom:'🍄',
+};
+
+// ── Villagers (role = hang-out bonus) ─────────────────────────────
+const ROLES = { Gardening:'🌱', Mining:'⛏️', Fishing:'🎣', Foraging:'🍃', Digging:'🕳️' };
+const ROLE_COLORS = { // avatar tints
+  Gardening:['#2e7d4f','#12301f'], Mining:['#5c5470','#241f33'],
+  Fishing:['#2b6ca3','#122338'], Foraging:['#3f7d54','#16301f'], Digging:['#8a5a2b','#33200e'],
+};
+const VILLAGERS = [
+  { id:'mickey',   name:'Mickey',   emoji:'🐭', role:'Gardening', gifts:['💐 Sunflower','🍎 Apple','🧀 Cheese'] },
+  { id:'minnie',   name:'Minnie',   emoji:'🎀', role:'Gardening', gifts:['💐 Pink Houseleek','🍒 Cherry','🧈 Butter'] },
+  { id:'remy',     name:'Remy',     emoji:'🍳', role:'Gardening', gifts:['🍅 Tomato','🍄 Mushroom','🧈 Butter'] },
+  { id:'moana',    name:'Moana',    emoji:'🌺', role:'Fishing',   gifts:['🥥 Coconut','🐟 Swordfish','💐 Red Bromeliad'] },
+  { id:'goofy',    name:'Goofy',    emoji:'👒', role:'Fishing',   gifts:['🐟 Bass','🌽 Corn','🫐 Blueberry'] },
+  { id:'ariel',    name:'Ariel',    emoji:'🧜‍♀️', role:'Fishing',  gifts:['🐚 Clam','💎 Aquamarine','💐 Blue Star Lily'] },
+  { id:'kristoff', name:'Kristoff', emoji:'⛏️', role:'Mining',    gifts:['💎 Amethyst','🥔 Potato','🪵 Hardwood'] },
+  { id:'elsa',     name:'Elsa',     emoji:'❄️', role:'Mining',    gifts:['💎 Aquamarine','🐟 Salmon','🍇 Gooseberry'] },
+  { id:'scrooge',  name:'Scrooge',  emoji:'💰', role:'Mining',    gifts:['💎 Topaz','💎 Garnet','💎 Citrine'] },
+  { id:'merlin',   name:'Merlin',   emoji:'🧙', role:'Foraging',  gifts:['🍄 Mushroom','🫐 Blueberry','🪵 Softwood'] },
+  { id:'walle',    name:'WALL-E',   emoji:'🤖', role:'Foraging',  gifts:['🍎 Apple','💎 Citrine','🪵 Hardwood'] },
+  { id:'donald',   name:'Donald',   emoji:'🦆', role:'Digging',   gifts:['🐟 Cod','🌶️ Chili Pepper','💐 Orange Marigold'] },
+];
+
+// ── Crops (Star Coins; growMin = minutes; yield = harvest count) ──
+// Real values where known (~ estimates) — pumpkin is the famous late-game
+// money maker; wheat is the classic quick-cash crop.
+const CROPS = [
+  { name:'Wheat',        emoji:'🌾', seed:3,  growMin:1,   yield:1, sell:12 },   // ~
+  { name:'Carrot',       emoji:'🥕', seed:10, growMin:15,  yield:1, sell:44 },
+  { name:'Tomato',       emoji:'🍅', seed:20, growMin:25,  yield:1, sell:47 },   // ~
+  { name:'Corn',         emoji:'🌽', seed:15, growMin:12,  yield:1, sell:33 },   // ~
+  { name:'Sugarcane',    emoji:'🎋', seed:25, growMin:15,  yield:1, sell:45 },   // ~
+  { name:'Okra',         emoji:'🫛', seed:40, growMin:30,  yield:1, sell:98 },   // ~
+  { name:'Rice',         emoji:'🍚', seed:32, growMin:35,  yield:1, sell:76 },   // ~
+  { name:'Chili Pepper', emoji:'🌶️', seed:35, growMin:45,  yield:1, sell:92 },   // ~
+  { name:'Cotton',       emoji:'🧵', seed:62, growMin:25,  yield:1, sell:106 },  // ~
+  { name:'Potato',       emoji:'🥔', seed:55, growMin:60,  yield:1, sell:172 },  // ~
+  { name:'Eggplant',     emoji:'🍆', seed:45, growMin:180, yield:1, sell:197 },  // ~
+  { name:'Pumpkin',      emoji:'🎃', seed:99, growMin:240, yield:1, sell:664 },
+];
+
+// ── Collections tracker (hue = glow colour for the chip) ──────────
+const COLLECTIONS = {
+  meals: { label:'🍽️ Meals', items:[
+    { name:'Soufflé', emoji:'🍮' }, { name:'Birthday Cake', emoji:'🎂' },
+    { name:'Fish Sandwich', emoji:'🥪' }, { name:'Veggie Pasta', emoji:'🍝' },
+    { name:'Pizza', emoji:'🍕' }, { name:'Pumpkin Puffs', emoji:'🥟' },
+    { name:'Apple Pie', emoji:'🥧' }, { name:'Gooseberry Pie', emoji:'🥧' },
+    { name:'Cherry Pie', emoji:'🥧' }, { name:'Berry Tart', emoji:'🍰' },
+    { name:'Waffles', emoji:'🧇' }, { name:'Coconut Cake', emoji:'🍰' },
+  ]},
+  fish: { label:'🐟 Fish', items:[
+    { name:'Bass', emoji:'🐟' }, { name:'Bream', emoji:'🐟' }, { name:'Cod', emoji:'🐟' },
+    { name:'Catfish', emoji:'🐟' }, { name:'Perch', emoji:'🐟' }, { name:'Rainbow Trout', emoji:'🐠' },
+    { name:'Salmon', emoji:'🐟' }, { name:'Tilapia', emoji:'🐠' }, { name:'Tuna', emoji:'🐟' },
+    { name:'Swordfish', emoji:'⚔️' },
+  ]},
+  gems: { label:'💎 Gems', items:[
+    { name:'Amethyst', emoji:'💎', hue:'#a06cf1' }, { name:'Aquamarine', emoji:'💎', hue:'#7ee0e0' },
+    { name:'Citrine', emoji:'💎', hue:'#ffb347' }, { name:'Garnet', emoji:'💎', hue:'#e0566d' },
+    { name:'Peridot', emoji:'💎', hue:'#9be564' }, { name:'Topaz', emoji:'💎', hue:'#ffd76a' },
+    { name:'Tourmaline', emoji:'💎', hue:'#ff9ed2' }, { name:'Diamond', emoji:'💎', hue:'#ffffff' },
+  ]},
+  flowers: { label:'💐 Flowers', items:[
+    { name:'Sunflower', emoji:'🌻', hue:'#ffd76a' }, { name:'Blue Star Lily', emoji:'💐', hue:'#9ad4ff' },
+    { name:'Pink Houseleek', emoji:'💐', hue:'#ffa8dd' }, { name:'Red Bromeliad', emoji:'🌺', hue:'#ff7a8a' },
+    { name:'Rising Penstemon', emoji:'💐', hue:'#c9a6ff' }, { name:'Orange Marigold', emoji:'🌼', hue:'#ffb347' },
+    { name:'White Peony', emoji:'🌸', hue:'#ffffff' }, { name:'Morning Glory', emoji:'💐', hue:'#9ad4ff' },
+  ]},
+  foraging: { label:'🍃 Foraging', items:[
+    { name:'Mushroom', emoji:'🍄' }, { name:'Softwood', emoji:'🪵' },
+    { name:'Hardwood', emoji:'🪵' }, { name:'Dry Wood', emoji:'🪵' },
+    { name:'Seaweed', emoji:'🌿' }, { name:'Clam', emoji:'🐚' },
+    { name:'Oyster', emoji:'🦪' }, { name:'Scallop', emoji:'🐚' },
+  ]},
+};
+const CAT_KEYS = ['meals','fish','gems','flowers','foraging'];
+COLLECTIONS.meals.items.forEach(i=>i.hue='#ffd76a');
+COLLECTIONS.fish.items.forEach(i=>i.hue='#9ad4ff');
+COLLECTIONS.foraging.items.forEach(i=>i.hue='#b8e986');
+// stable ids for saving checkmarks
+CAT_KEYS.forEach(c => COLLECTIONS[c].items.forEach(it => { it.id = it.name.toLowerCase().replace(/[^a-z0-9]+/g,'-'); }));
+
+const COURSE_LABEL = { appetizer:'Appetizer', entree:'Entrée', dessert:'Dessert' };
+const COURSE_EMOJI = { appetizer:'🥗', entree:'🍽️', dessert:'🍰' };
+
+/* ══════════════════════════════════════════════════════════════════
+   STATE & PERSISTENCE (localStorage)
+   ══════════════════════════════════════════════════════════════════ */
+const SAVE_KEY = 'dreamlightCompanionSave.v1';
+const $  = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+
+function todayKey(){
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function freshSave(){
+  return {
+    v:1,
+    daily:{ date:todayKey(), tasks:{}, gifts:{} },   // resets every local midnight
+    inventory:{},                                     // ingredient name -> true
+    collections:{ meals:{}, fish:{}, gems:{}, flowers:{}, foraging:{} },
+    settings:{ bannerDone:false },
+  };
+}
+function loadSave(){
+  try{
+    const raw = localStorage.getItem(SAVE_KEY);
+    if(!raw) return freshSave();
+    const p = JSON.parse(raw), f = freshSave();
+    return {
+      ...f, ...p,
+      daily:       { ...f.daily, ...(p.daily||{}) },
+      collections: { ...f.collections, ...(p.collections||{}) },
+      settings:    { ...f.settings, ...(p.settings||{}) },
+      inventory:   p.inventory || {},
+    };
+  }catch(e){ return freshSave(); }
+}
+function persist(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(S)); }catch(e){/* private mode etc. */} }
+function ensureDay(force){
+  const t = todayKey();
+  if(force || S.daily.date !== t){
+    S.daily = { date:t, tasks:{}, gifts:{} };
+    persist();
+  }
+}
+
+let S = loadSave();
+ensureDay();
+
+// transient UI state (not saved)
+const UI = {
+  tab:'daily',
+  recipeQ:'', course:'', stars:'', canMake:false, invOpen:false,
+  villQ:'',
+  cropSort:{ key:'perHour', dir:-1 }, cropQ:'',
+  collCat:'meals', collQ:'',
+};
+
+/* ══════════════════════════════════════════════════════════════════
+   RENDERERS
+   ══════════════════════════════════════════════════════════════════ */
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const starsHTML = n => '★'.repeat(n) + '<span class="off">' + '☆'.repeat(5-n) + '</span>';
+const canMake = r => r.ingredients.every(i => S.inventory[i]);
+
+function setBar(barEl, iEl, pctEl, frac, label){
+  const p = Math.round(frac*100);
+  iEl.style.width = p + '%';
+  if(pctEl) pctEl.textContent = p + '%';
+  if(label !== undefined && barEl) barEl.textContent = label;
+}
+
+/* ── Daily ── */
+function greeting(){
+  const h = new Date().getHours();
+  if(h < 5)  return 'Still awake, Dreamer? 🌙';
+  if(h < 12) return 'Good morning, Dreamer! ☀️';
+  if(h < 18) return 'Good afternoon! 🌤️';
+  return 'Good evening! 🌙';
+}
+function renderDaily(){
+  $('#greeting').textContent = greeting();
+  const done = DAILY_TASKS.filter(t => S.daily.tasks[t.id]).length;
+  setBar($('#dailyBarTxt'), $('#dailyBar'), $('#dailyBarPct'), done/DAILY_TASKS.length,
+    done === DAILY_TASKS.length ? '🌟 Valley complete — see you tomorrow!' : `${done} / ${DAILY_TASKS.length} duties done`);
+  $('#dailyList').innerHTML = DAILY_TASKS.map(t => `
+    <button class="duty ${S.daily.tasks[t.id]?'done':''}" data-act="task" data-id="${t.id}">
+      <span class="d-emoji">${t.emoji}</span>
+      <span class="d-txt"><b>${t.label}</b><small>${t.hint}</small></span>
+      <span class="d-check">✓</span>
+    </button>`).join('');
+}
+
+/* ── Ingredient inventory ── */
+function renderInventory(){
+  const owned = Object.keys(S.inventory).filter(k => S.inventory[k]).length;
+  const total = INGREDIENT_GROUPS.reduce((n,g) => n + g.items.length, 0);
+  $('#invCount').textContent = `· ${owned} / ${total} owned`;
+  $('#invBody').innerHTML = INGREDIENT_GROUPS.map(g => `
+    <div class="inv-group"><h4>${g.name}</h4><div class="inv-grid">
+      ${g.items.map(i => `<button class="inv-chip ${S.inventory[i]?'own':''}" data-act="inv" data-ing="${esc(i)}">${ING_EMOJI[i]||'🧺'} ${i}</button>`).join('')}
+    </div></div>`).join('');
+  $('#invCard').classList.toggle('open', UI.invOpen);
+}
+
+/* ── Recipes ── */
+function renderRecipes(){
+  const q = UI.recipeQ.trim().toLowerCase();
+  const list = RECIPES.filter(r =>
+    (!q || r.name.toLowerCase().includes(q) || r.ingredients.some(i => i.toLowerCase().includes(q))) &&
+    (!UI.course || r.course === UI.course) &&
+    (!UI.stars || r.ingredients.length === +UI.stars) &&
+    (!UI.canMake || canMake(r))
+  );
+  $('#recipeCount').textContent = `${list.length} of ${RECIPES.length} recipes`;
+  $('#recipeList').innerHTML = list.map(r => {
+    const cm = canMake(r), n = r.ingredients.length;
+    return `
+    <div class="recipe card ${cm?'can-make':''}" data-name="${esc(r.name)}">
+      <div class="r-top">
+        <span class="r-emoji">${r.emoji}</span>
+        <div class="r-titles">
+          <div class="r-name">${esc(r.name)}${cm ? '<span class="badge-can">✓ Can Make</span>' : ''}</div>
+          <div class="r-course">${COURSE_EMOJI[r.course]} ${COURSE_LABEL[r.course]}</div>
+        </div>
+        <div class="r-stars">${starsHTML(n)}</div>
+      </div>
+      <div class="r-ing">${r.ingredients.map(i => `<span class="ing ${S.inventory[i]?'own':''}">${ING_EMOJI[i]||'🧺'} ${i}</span>`).join('')}</div>
+      <div class="r-stats"><span class="zap">⚡ ${r.energy.toLocaleString()}</span><span class="coin">🪙 ${r.sell.toLocaleString()}</span><span class="chip">${n}★ ${n===5?'· top dish!':''}</span></div>
+    </div>`;
+  }).join('') || '<div class="empty">🌙 No recipes match…<br>try clearing a filter!</div>';
+}
+
+/* ── Villagers ── */
+function renderVillagers(){
+  const q = UI.villQ.trim().toLowerCase();
+  const gifted = Object.values(S.daily.gifts).filter(Boolean).length;
+  setBar($('#giftBarTxt'), $('#giftBar'), $('#giftBarPct'), gifted/VILLAGERS.length, `🎁 ${gifted} / ${VILLAGERS.length} gifted today`);
+  const list = VILLAGERS.filter(v =>
+    !q || v.name.toLowerCase().includes(q) || v.role.toLowerCase().includes(q) ||
+    v.gifts.some(g => g.toLowerCase().includes(q))
+  );
+  $('#villagerGrid').innerHTML = list.map(v => {
+    const done = !!S.daily.gifts[v.id];
+    const [c1,c0] = ROLE_COLORS[v.role];
+    return `
+    <div class="villager card ${done?'done':''}" data-name="${esc(v.name)}">
+      <div class="v-avatar" style="--v1:${c1};--v0:${c0}">${v.emoji}</div>
+      <div class="v-name">${v.name}</div>
+      <div class="v-role">${ROLES[v.role]} ${v.role} hang-out</div>
+      <div class="v-gifts">${v.gifts.map(g => `<span class="v-gift">🎁 ${g}</span>`).join('')}</div>
+      <button class="gift-btn" data-act="gift" data-id="${v.id}">${done ? '✅ Gifted today' : '🎁 Gift today'}</button>
+    </div>`;
+  }).join('') || '<div class="empty" style="grid-column:1/-1">🌙 No villagers match that search…</div>';
+}
+
+/* ── Crops ── */
+function fmtGrow(m){
+  if(m < 60) return m + 'm';
+  if(m % 60 === 0) return (m/60) + 'h';
+  return Math.floor(m/60) + 'h ' + (m%60) + 'm';
+}
+function renderCrops(){
+  const q = UI.cropQ.trim().toLowerCase();
+  $('#cropFilterTag').innerHTML = q ? `
+    <div class="controls" style="margin-bottom:10px">
+      <span class="toggle" style="display:inline-flex;align-items:center" aria-pressed="true">
+        🔍 “${esc(UI.cropQ)}” <button data-act="clearCropQ" style="border:none;background:none;color:inherit;font-size:15px;margin-left:7px;cursor:pointer">✕</button>
+      </span>
+    </div>` : '';
+  const rows = CROPS
+    .map(c => ({ ...c, profit:c.sell*c.yield - c.seed, perHour:(c.sell*c.yield - c.seed)/(c.growMin/60) }))
+    .filter(c => !q || c.name.toLowerCase().includes(q))
+    .sort((a,b) => {
+      const {key,dir} = UI.cropSort;
+      const va = a[key], vb = b[key];
+      return (va > vb ? 1 : va < vb ? -1 : 0) * dir;
+    });
+  $('#cropBody').innerHTML = rows.map(c => `
+    <tr data-crop="${esc(c.name)}">
+      <td class="crop-name"><span class="ce">${c.emoji}</span>${c.name}</td>
+      <td>${c.seed}</td>
+      <td>⏱ ${fmtGrow(c.growMin)}</td>
+      <td>×${c.yield}</td>
+      <td>🪙 ${c.sell}</td>
+      <td><span class="pos">+${c.profit}</span></td>
+      <td><span class="hrv">${Math.round(c.perHour)}</span></td>
+    </tr>`).join('') || '<tr><td colspan="7"><div class="empty">🌾 No crops match…</div></td></tr>';
+  // header sort arrows + aria
+  $$('#cropTable th').forEach(th => {
+    const ar = th.querySelector('.arrow');
+    if(th.dataset.key === UI.cropSort.key){
+      ar.textContent = UI.cropSort.dir === 1 ? '▲' : '▼';
+      th.setAttribute('aria-sort', UI.cropSort.dir === 1 ? 'ascending' : 'descending');
+    } else { ar.textContent = ''; th.removeAttribute('aria-sort'); }
+  });
+}
+
+/* ── Collections ── */
+function renderCollections(){
+  let tot = 0, done = 0;
+  CAT_KEYS.forEach(c => COLLECTIONS[c].items.forEach(it => {
+    tot++; if(S.collections[c][it.id]) done++;
+  }));
+  setBar(null, $('#collOverallBar'), $('#collOverallPct'), tot ? done/tot : 0);
+  $('#collOverallPct').parentElement.querySelector('.bar-label span:first-child').textContent =
+    `🌟 Valley Collection · ${done}/${tot}`;
+
+  const q = UI.collQ.trim().toLowerCase();
+  const all = COLLECTIONS[UI.collCat].items;
+  const catDone = all.filter(it => S.collections[UI.collCat][it.id]).length;
+  setBar($('#catBarTxt'), $('#catBar'), $('#catBarPct'), all.length ? catDone/all.length : 0,
+    `${COLLECTIONS[UI.collCat].label} · ${catDone}/${all.length}`);
+  $('#cropFilterColl').innerHTML = q ? `
+    <div class="controls" style="margin-bottom:10px">
+      <span class="toggle" style="display:inline-flex;align-items:center" aria-pressed="true">
+        🔍 “${esc(UI.collQ)}” <button data-act="clearCollQ" style="border:none;background:none;color:inherit;font-size:15px;margin-left:7px;cursor:pointer">✕</button>
+      </span>
+    </div>` : '';
+  const items = all.filter(it => !q || it.name.toLowerCase().includes(q));
+  $('#collGrid').innerHTML = items.map(it => `
+    <button class="coll-item ${S.collections[UI.collCat][it.id]?'done':''}" style="--hue:${it.hue}"
+            data-act="coll" data-cat="${UI.collCat}" data-id="${it.id}" data-name="${esc(it.name)}">
+      <span class="c-emoji">${it.emoji}</span>
+      <span class="c-name">${it.name}</span>
+      <span class="c-check">✓</span>
+    </button>`).join('') || '<div class="empty" style="grid-column:1/-1">🌙 Nothing here yet…</div>';
+  $$('#catRow .cat-chip').forEach(b => b.classList.toggle('active', b.dataset.cat === UI.collCat));
+}
+
+function renderAll(){
+  renderDaily(); renderInventory(); renderRecipes();
+  renderVillagers(); renderCrops(); renderCollections();
+  $('#banner').classList.toggle('hidden', !!S.settings.bannerDone);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   TABS / OVERLAY / SHEET / TOAST
+   ══════════════════════════════════════════════════════════════════ */
+function switchTab(t){
+  UI.tab = t;
+  $$('.tabbar button').forEach(b => b.classList.toggle('active', b.dataset.tab === t));
+  $$('.tab').forEach(s => s.classList.toggle('active', s.id === 'tab-' + t));
+  $('#main').scrollTop = 0;
+}
+function positionOverlay(){
+  document.documentElement.style.setProperty('--hdr-h', $('#hdr').offsetHeight + 'px');
+  document.documentElement.style.setProperty('--nav-h', $('#tabbar').offsetHeight + 'px');
+}
+function closeSearch(){
+  $('#searchOverlay').classList.remove('open');
+  $('#globalSearch').value = '';
+  $('#searchClear').classList.remove('show');
+  if(document.activeElement) document.activeElement.blur();
+}
+function openSettings(){ $('#settingsSheet').classList.add('open'); $('#sheetBack').classList.add('open'); }
+function closeSettings(){ $('#settingsSheet').classList.remove('open'); $('#sheetBack').classList.remove('open'); }
+
+let toastTimer = null;
+function toast(msg){
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   GLOBAL SEARCH — filters recipes, villagers, crops & collections
+   ══════════════════════════════════════════════════════════════════ */
+function renderSearch(q){
+  const ov = $('#searchOverlay');
+  q = q.trim().toLowerCase();
+  $('#searchClear').classList.toggle('show', q.length > 0);
+  if(!q){ ov.classList.remove('open'); return; }
+  positionOverlay();
+
+  const rQ = RECIPES.filter(r => r.name.toLowerCase().includes(q) || r.ingredients.some(i => i.toLowerCase().includes(q))).slice(0,5);
+  const vQ = VILLAGERS.filter(v => v.name.toLowerCase().includes(q) || v.role.toLowerCase().includes(q)).slice(0,5);
+  const cQ = CROPS.filter(c => c.name.toLowerCase().includes(q)).slice(0,5);
+  const colQ = [];
+  CAT_KEYS.forEach(c => COLLECTIONS[c].items.forEach(it => { if(it.name.toLowerCase().includes(q)) colQ.push({cat:c, it}); }));
+  const colSlice = colQ.slice(0,6);
+
+  const group = (title, rows) => rows.length ? `
+    <div class="sr-group"><div class="sr-title">${title}</div>${rows}</div>` : '';
+  const row = (tab, ico, name, meta) => `
+    <button class="sr-row" data-act="goto" data-tab="${tab}" data-name="${esc(name)}">
+      <span class="sr-ico">${ico}</span><span class="sr-name">${esc(name)}</span><span class="sr-meta">${meta}</span>
+    </button>`;
+
+  const html =
+    group('🍳 Recipes', rQ.map(r => row('recipes', r.emoji, r.name,
+      `${COURSE_LABEL[r.course]} · ${'★'.repeat(r.ingredients.length)} · 🪙${r.sell}`)).join('')) +
+    group('🐭 Villagers', vQ.map(v => row('villagers', v.emoji, v.name,
+      `${ROLES[v.role]} ${v.role}`)).join('')) +
+    group('🌾 Crops', cQ.map(c => row('crops', c.emoji, c.name,
+      `🪙${Math.round((c.sell*c.yield - c.seed)/(c.growMin/60))}/hr`)).join('')) +
+    group('📖 Collections', colSlice.map(x => row('collections', x.it.emoji, x.it.name,
+      COLLECTIONS[x.cat].label.replace(/^\S+\s/,''))).join('') +
+      (colQ.length > 6 ? `<div class="sr-title" style="text-align:center">+ ${colQ.length-6} more…</div>` : ''));
+
+  ov.innerHTML = html || '<div class="empty">🌙 Nothing found in the Valley…<br>try another word?</div>';
+  ov.classList.add('open');
+}
+
+/* jump from a search result into the right tab, filtered & highlighted */
+function gotoResult(tab, name){
+  closeSearch(); switchTab(tab);
+  let el = null;
+  if(tab === 'recipes'){
+    UI.recipeQ = name; $('#recipeQ').value = name; renderRecipes();
+    el = $(`#recipeList .recipe[data-name="${CSS.escape(name)}"]`);
+  } else if(tab === 'villagers'){
+    UI.villQ = name; $('#villagerQ').value = name; renderVillagers();
+    el = $(`#villagerGrid .villager[data-name="${CSS.escape(name)}"]`);
+  } else if(tab === 'crops'){
+    UI.cropQ = name; renderCrops();
+    el = $(`#cropBody tr[data-crop="${CSS.escape(name)}"]`);
+  } else if(tab === 'collections'){
+    // find which category the item lives in
+    let found = null;
+    CAT_KEYS.forEach(c => COLLECTIONS[c].items.forEach(it => { if(it.name === name) found = {cat:c, it}; }));
+    if(found){
+      UI.collCat = found.cat; UI.collQ = ''; renderCollections();
+      el = $(`#collGrid .coll-item[data-id="${found.it.id}"]`);
+    }
+  }
+  if(el){
+    el.classList.add('flash');
+    setTimeout(() => el.scrollIntoView({block:'center', behavior:'smooth'}), 60);
+    setTimeout(() => el.classList.remove('flash'), 2200);
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   MIDNIGHT COUNTDOWN & AUTO DAILY RESET
+   ══════════════════════════════════════════════════════════════════ */
+function tick(){
+  const now = new Date();
+  const next = new Date(now); next.setHours(24,0,0,0);
+  const diff = Math.max(0, next - now);
+  const h = Math.floor(diff/3.6e6), m = Math.floor((diff % 3.6e6)/6e4), s = Math.floor((diff % 6e4)/1e3);
+  $('#countdown').textContent = `${h}h ${String(m).padStart(2,'0')}m ${String(s).padStart(2,'0')}s`;
+  if(S.daily.date !== todayKey()){   // rolled past local midnight
+    ensureDay(true);
+    renderDaily(); renderVillagers();
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   SETTINGS: EXPORT / IMPORT / RESET  (iOS localStorage backup path)
+   ══════════════════════════════════════════════════════════════════ */
+function exportSave(){
+  const code = JSON.stringify(S);
+  const box = $('#exportBox');
+  box.value = code;
+  copyText(code, '📋 Save code copied! Keep it safe 🌟');
+  box.scrollIntoView({block:'center', behavior:'smooth'});
+}
+function copyText(text, okMsg){
+  const fallback = () => {
+    const box = $('#exportBox');
+    box.value = text; box.focus(); box.select();
+    let ok = false;
+    try{ ok = document.execCommand('copy'); }catch(e){}
+    toast(ok ? okMsg : '⚠️ Tap the code, choose Select All → Copy');
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext){
+    navigator.clipboard.writeText(text).then(() => toast(okMsg)).catch(fallback);
+  } else fallback();
+}
+function importSave(){
+  const raw = $('#importBox').value.trim();
+  if(!raw){ toast(' Paste a save code first 🌙'); return; }
+  try{
+    const p = JSON.parse(raw);
+    if(typeof p !== 'object' || p === null || p.v === undefined) throw new Error('bad');
+    const f = freshSave();
+    S = { ...f, ...p,
+      daily:{ ...f.daily, ...(p.daily||{}) },
+      collections:{ ...f.collections, ...(p.collections||{}) },
+      settings:{ ...f.settings, ...(p.settings||{}) },
+      inventory: p.inventory || {} };
+    ensureDay();
+    persist(); renderAll();
+    $('#importBox').value = '';
+    toast('✨ Save restored — welcome back!');
+    closeSettings();
+  }catch(e){ toast('⚠️ That save code looks scrambled…'); }
+}
+function resetAll(){
+  if(!confirm('Erase ALL progress on this device?')) return;
+  S = freshSave(); persist(); renderAll();
+  toast('🧹 Fresh valley — a brand new start!');
+  closeSettings();
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   EVENTS (delegated clicks + persistent control listeners)
+   ══════════════════════════════════════════════════════════════════ */
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if(!el) return;
+  const act = el.dataset.act;
+
+  if(act === 'tab'){ switchTab(el.dataset.tab); }
+  else if(act === 'task'){
+    const id = el.dataset.id;
+    S.daily.tasks[id] = !S.daily.tasks[id];
+    if(!S.daily.tasks[id]) delete S.daily.tasks[id];
+    persist(); renderDaily();
+  }
+  else if(act === 'resetDay'){
+    ensureDay(true);
+    renderDaily(); renderVillagers();
+    toast('🌙 A new day dawns in the Valley!');
+  }
+  else if(act === 'gift'){
+    const id = el.dataset.id;
+    S.daily.gifts[id] = !S.daily.gifts[id];
+    if(!S.daily.gifts[id]) delete S.daily.gifts[id];
+    persist(); renderVillagers();
+  }
+  else if(act === 'inv'){
+    const ing = el.dataset.ing;
+    S.inventory[ing] = !S.inventory[ing];
+    if(!S.inventory[ing]) delete S.inventory[ing];
+    persist(); renderInventory(); renderRecipes();
+  }
+  else if(act === 'toggleInventory'){
+    UI.invOpen = !UI.invOpen;
+    renderInventory();
+    el.setAttribute('aria-expanded', String(UI.invOpen));
+  }
+  else if(act === 'toggleCanMake'){
+    UI.canMake = !UI.canMake;
+    el.setAttribute('aria-pressed', String(UI.canMake));
+    renderRecipes();
+  }
+  else if(act === 'sort'){
+    const key = el.dataset.key;
+    if(UI.cropSort.key === key) UI.cropSort.dir *= -1;
+    else UI.cropSort = { key, dir: key === 'name' ? 1 : -1 };
+    renderCrops();
+  }
+  else if(act === 'clearCropQ'){ UI.cropQ = ''; renderCrops(); }
+  else if(act === 'cat'){
+    UI.collCat = el.dataset.cat; UI.collQ = '';
+    renderCollections();
+  }
+  else if(act === 'coll'){
+    const { cat, id } = el.dataset;
+    S.collections[cat][id] = !S.collections[cat][id];
+    if(!S.collections[cat][id]) delete S.collections[cat][id];
+    persist(); renderCollections();
+  }
+  else if(act === 'clearCollQ'){ UI.collQ = ''; renderCollections(); }
+  else if(act === 'goto'){ gotoResult(el.dataset.tab, el.dataset.name); }
+  else if(act === 'searchClear'){ closeSearch(); }
+  else if(act === 'dismissBanner'){
+    S.settings.bannerDone = true; persist();
+    $('#banner').classList.add('hidden');
+    toast('🌟 Tip dismissed — enjoy the Valley!');
+  }
+  else if(act === 'openSettings'){ openSettings(); }
+  else if(act === 'closeSettings'){ closeSettings(); }
+  else if(act === 'exportSave'){ exportSave(); }
+  else if(act === 'importSave'){ importSave(); }
+  else if(act === 'resetAll'){ resetAll(); }
+});
+
+// recipe filter controls
+$('#recipeQ').addEventListener('input', e => { UI.recipeQ = e.target.value; renderRecipes(); });
+$('#recipeCourse').addEventListener('change', e => { UI.course = e.target.value; renderRecipes(); });
+$('#recipeStars').addEventListener('change', e => { UI.stars = e.target.value; renderRecipes(); });
+$('#villagerQ').addEventListener('input', e => { UI.villQ = e.target.value; renderVillagers(); });
+
+// global search
+$('#globalSearch').addEventListener('input', e => renderSearch(e.target.value));
+$('#globalSearch').addEventListener('keydown', e => {
+  if(e.key === 'Enter'){
+    const first = $('#searchOverlay .sr-row');
+    if(first) first.click();
+  }
+});
+// tapping the dark area of the overlay closes it
+$('#searchOverlay').addEventListener('click', e => { if(e.target.id === 'searchOverlay') closeSearch(); });
+
+// keep overlay positioned if the URL bar collapses/resizes
+window.addEventListener('resize', () => { if($('#searchOverlay').classList.contains('open')) positionOverlay(); });
+
+/* ══════════════════════════════════════════════════════════════════
+   BOOT
+   ══════════════════════════════════════════════════════════════════ */
+renderAll();
+switchTab('daily');
+tick();
+setInterval(tick, 1000);
+</script>
+</body>
+</html>
